@@ -1,5 +1,5 @@
 name: Hello world
-on: TODO
+on: workflow_dispatch
 
 jobs:
   #the name of the job
