@@ -1,0 +1,227 @@
+{
+  "info": {
+    "_postman_id": "b9cb6780-b841-4cd7-9593-8c2ea3f4142d",
+    "name": "C-Academy ESS - Todo Lists",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"User created or exists\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 400, 409]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"useress6\",\n    \"password\": \"cncs**2026\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "host.docker.internal:7100/user",
+              "host": ["host.docker.internal"],
+              "port": "7100",
+              "path": ["user"]
+            }
+          }
+        },
+        {
+          "name": "Login user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Login successful\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var token = pm.response.text();",
+                  "    pm.collectionVariables.set(\"userToken\", token);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"useress6\",\n    \"password\": \"cncs**2026\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "host.docker.internal:7100/login",
+              "host": ["host.docker.internal"],
+              "port": "7100",
+              "path": ["login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create a new list",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"List created successfully\", function () {",
+              "   var json = pm.response.json();",
+              "   pm.collectionVariables.set(\"listId\", json.listId);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{userToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"listName\":\"My CI/CD demo ESS list\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "host.docker.internal:7100/todolist",
+          "host": ["host.docker.internal"],
+          "port": "7100",
+          "path": ["todolist"]
+        }
+      }
+    },
+    {
+      "name": "Get All Lists",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Response is an array\", function () {",
+              "    pm.expect(pm.response.json()).to.be.an('array');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{userToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "host.docker.internal:7100/todolist",
+          "host": ["host.docker.internal"],
+          "port": "7100",
+          "path": ["todolist"]
+        }
+      }
+    },
+    {
+      "name": "Get List By ID",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Returned list matches ID\", function () {",
+              "    pm.expect(pm.response.json().listId).to.eql(parseInt(pm.collectionVariables.get(\"listId\")));",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{userToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "host.docker.internal:7100/todolist/{{listId}}",
+          "host": ["host.docker.internal"],
+          "port": "7100",
+          "path": ["todolist", "{{listId}}"]
+        }
+      }
+    },
+    {
+      "name": "Create Task in List",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Task created successfully\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{userToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"description\": \"Task created via Newman\",\n    \"listId\": {{listId}}\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "host.docker.internal:7100/todo/item",
+          "host": ["host.docker.internal"],
+          "port": "7100",
+          "path": ["todo", "item"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "userToken", "value": "" },
+    { "key": "listId", "value": "" }
+  ]
+}

@@ -1,0 +1,41 @@
+# =====================
+# Role hierarchy
+# =====================
+
+g, Admin, Share
+g, Share, Base
+
+# =====================
+# User assignments
+# =====================
+
+g, alice, Base
+g, useress6, Base
+g, useress1, Base
+g, admin, Admin
+g, Carlos, Admin
+
+# =====================
+# Base permissions
+# =====================
+
+p, Base, /todolist, GET
+p, Base, /todolist, POST
+p, Base, /todolist/:id, GET
+
+p, Base, /todo/item, POST
+p, Base, /todo/:listid/tasks, GET
+p, Base, /todo/:listid/tasks/:taskid, GET
+
+# =====================
+# Share permissions
+# =====================
+
+p, Share, /todolist/:listid/share, POST
+
+# =====================
+# Admin permissions
+# =====================
+
+p, Admin, /user/:id, GET
+p, Admin, /user/:id, DELETE
