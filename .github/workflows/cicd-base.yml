@@ -48,8 +48,8 @@ jobs:
         uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: "fs"
-          scanners: "vuln,secret,config"
-          severity: "CRITICAL,HIGH"
+          scanners: "vuln,secret,misconfig"
+          severity: "CRITICAL,HIGH,MEDIUM"
           format: "sarif"
           output: "trivy-results.sarif"
           cache: "true"
