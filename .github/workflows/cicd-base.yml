@@ -9,6 +9,9 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  # ----------------------------------
+  # JOB 1 — SECURITY (SAST + TRIVY)
+  # ----------------------------------
   security-scan:
     runs-on: ubuntu-latest
     permissions:
@@ -64,7 +67,21 @@ jobs:
         with:
           name: Generate artifact with Trivy result
           path: trivy-results.sarif
+  
+  # ----------------------------------
+  # JOB 2 — DOCKER (BUILD + PUSH)
+  # ----------------------------------
+  docker-build:
+    runs-on: ubuntu-latest
 
+    # DEPENDÊNCIA (OBRIGATÓRIO NO ENUNCIADO)
+    needs: security-scan
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
