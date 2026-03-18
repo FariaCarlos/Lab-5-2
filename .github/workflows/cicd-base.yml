@@ -127,7 +127,7 @@ jobs:
         uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: "image"
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main
+          image-ref: ${{ steps.meta.outputs.tags }}
           format: "sarif"
           output: "trivy-image-results.sarif"
 
