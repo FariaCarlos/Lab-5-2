@@ -9,6 +9,9 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  # ----------------------------------
+  # JOB 1 — SECURITY (SAST + TRIVY)
+  # ----------------------------------
   security-scan:
     runs-on: ubuntu-latest
     permissions:
@@ -48,8 +51,8 @@ jobs:
         uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: "fs"
-          scanners: "vuln,secret,config"
-          severity: "CRITICAL,HIGH"
+          scanners: "vuln,secret,misconfig"
+          severity: "CRITICAL,HIGH,MEDIUM"
           format: "sarif"
           output: "trivy-results.sarif"
           cache: "true"
@@ -64,7 +67,22 @@ jobs:
         with:
           name: Generate artifact with Trivy result
           path: trivy-results.sarif
+  
+  # ----------------------------------
+  # JOB 2 — DOCKER (BUILD + PUSH)
+  # ----------------------------------
+  docker-build:
+    runs-on: ubuntu-latest
 
+    # DEPENDÊNCIA (OBRIGATÓRIO NO ENUNCIADO)
+    needs: security-scan
+
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -91,7 +109,36 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-      # Push multi-arch (AMD64 + ARM64)
+      # 1. BUILD (sem push)
+      - name: Build Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64
+          push: false
+          load: true
+
+      # 2. SCAN da imagem
+      - name: Run Trivy vulnerability scanner (image)
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          scan-type: "image"
+          image-ref: ${{ steps.meta.outputs.tags }}
+          format: "sarif"
+          output: "trivy-image-results.sarif"
+
+      # 3. Upload artifact
+      - name: Upload artifact with Trivy image result
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-image-results
+          path: trivy-image-results.sarif
+
+      # 4. Push multi-arch (AMD64 + ARM64)
       - name: Push Docker image (multi-arch)
         uses: docker/build-push-action@v5
         with:
@@ -101,3 +148,15 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
           push: true
+
+      # Install cosign
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      # Sign image
+      - name: Sign all image tags
+        run: |
+          echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n' | while read tag; do
+            echo "Signing $tag ..."
+            cosign sign --yes $tag
+          done
