@@ -108,7 +108,36 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-      # Push multi-arch (AMD64 + ARM64)
+      # 1. BUILD (sem push)
+      - name: Build Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64
+          push: false
+          load: true
+
+      # 2. SCAN da imagem
+      - name: Run Trivy vulnerability scanner (image)
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          scan-type: "image"
+          image-ref: ${{ steps.meta.outputs.tags }}
+          format: "sarif"
+          output: "trivy-image-results.sarif"
+
+      # 3. Upload artifact
+      - name: Upload artifact with Trivy image result
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-image-results
+          path: trivy-image-results.sarif
+
+      # 4. Push multi-arch (AMD64 + ARM64)
       - name: Push Docker image (multi-arch)
         uses: docker/build-push-action@v5
         with:
